@@ -1,11 +1,13 @@
 import os
 import uuid
+from time import perf_counter
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Literal
 
 import jwt
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from prometheus_client import Counter, Histogram, CONTENT_TYPE_LATEST, generate_latest
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
@@ -129,6 +131,32 @@ app = FastAPI(
     description="Payment processing and administration service",
     version="3.0",
 )
+
+# Fixed status labels keep cardinality bounded; never label by user or payment ID.
+http_requests = Counter("http_requests_total", "Completed business HTTP requests", ["status"])
+http_duration = Histogram("http_request_duration_seconds", "Business HTTP request duration")
+for status_code in (200, 201, 400, 401, 403, 404, 409, 422, 500, 503):
+    http_requests.labels(str(status_code))
+
+
+@app.middleware("http")
+async def observe_requests(request: Request, call_next):
+    if request.url.path in ("/metrics", "/health"):
+        return await call_next(request)
+    started = perf_counter()
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        return response
+    finally:
+        http_requests.labels(str(status)).inc()
+        http_duration.observe(perf_counter() - started)
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics():
+    return Response(generate_latest(), headers={"Content-Type": CONTENT_TYPE_LATEST})
 
 app.add_middleware(
     CORSMiddleware,

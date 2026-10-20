@@ -1,0 +1,11 @@
+# Run from Backend: docker compose -f ../docker-compose.yml -f ml-api/compose.yml up -d --build ml-api
+# Build paths resolve relative to the FIRST compose file (the project root).
+services:
+  ml-api:
+    build: ./Backend/ml-api
+    environment:
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
+      TARGET_JOB: payment-api
+    ports:
+      - "127.0.0.1:8002:8002"
+    restart: unless-stopped

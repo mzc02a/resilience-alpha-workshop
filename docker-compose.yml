@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: workshop
       POSTGRES_DB: payments
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +18,7 @@ services:
   auth-api:
     build: ./backend/auth-api
     environment:
-      DATABASE_URL: postgresql+psycopg://workshop:workshop@db:5432/payments
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
     ports:
       - "127.0.0.1:8001:8001"
@@ -29,7 +29,7 @@ services:
   payment-api:
     build: ./backend/payment-api
     environment:
-      DATABASE_URL: postgresql+psycopg://workshop:workshop@db:5432/payments
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
     ports:
       - "127.0.0.1:8000:8000"

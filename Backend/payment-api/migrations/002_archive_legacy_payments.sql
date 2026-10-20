@@ -1,0 +1,20 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS payments_legacy
+AS
+SELECT *
+FROM payments
+WHERE FALSE;
+
+INSERT INTO payments_legacy
+SELECT *
+FROM payments
+WHERE user_id IS NULL;
+
+DELETE FROM payments
+WHERE user_id IS NULL;
+
+ALTER TABLE payments
+ALTER COLUMN user_id SET NOT NULL;
+
+COMMIT;

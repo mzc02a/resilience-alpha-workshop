@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: workshop
+      POSTGRES_PASSWORD: workshop
+      POSTGRES_DB: payments
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workshop -d payments"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-api:
+    build: ./backend/auth-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://workshop:workshop@db:5432/payments
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+    ports:
+      - "127.0.0.1:8001:8001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  payment-api:
+    build: ./backend/payment-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://workshop:workshop@db:5432/payments
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      - auth-api
+      - payment-api
+
+volumes:
+  postgres_data:

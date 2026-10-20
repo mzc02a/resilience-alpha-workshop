@@ -1,4 +1,5 @@
 fastapi>=0.115,<1
+prometheus-fastapi-instrumentator>=7.1,<8
 uvicorn[standard]>=0.30,<1
 sqlalchemy>=2.0,<3
 psycopg[binary]>=3.2,<4

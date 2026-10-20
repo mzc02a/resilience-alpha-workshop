@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 import jwt
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -119,6 +120,10 @@ app = FastAPI(
     description="Authentication and role management service",
     version="2.0",
 )
+
+Instrumentator(
+    excluded_handlers=["/metrics"],
+).instrument(app).expose(app, include_in_schema=False)
 
 app.add_middleware(
     CORSMiddleware,

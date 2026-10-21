@@ -1,0 +1,242 @@
+[
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576492.0,
+        "anomaly":  false,
+        "score":  -0.08507364468784512,
+        "features":  {
+                         "requests_per_second":  0.5333688912594173,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004650544916671606
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576507.0,
+        "anomaly":  false,
+        "score":  -0.10709091710121144,
+        "features":  {
+                         "requests_per_second":  0.5111451874569416,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004342809086902771
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576522.0,
+        "anomaly":  false,
+        "score":  -0.11903288224693664,
+        "features":  {
+                         "requests_per_second":  0.5111338281701409,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004563768956438213
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576537.0,
+        "anomaly":  false,
+        "score":  -0.0886227047003183,
+        "features":  {
+                         "requests_per_second":  0.5333807449551071,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004607178708245859
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576552.0,
+        "anomaly":  false,
+        "score":  -0.06492187682005635,
+        "features":  {
+                         "requests_per_second":  0.5111338281701409,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004844854391313161
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576567.0,
+        "anomaly":  false,
+        "score":  -0.0919640118195501,
+        "features":  {
+                         "requests_per_second":  0.5111451874569416,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004735693652195472
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576582.0,
+        "anomaly":  false,
+        "score":  -0.08824785395144774,
+        "features":  {
+                         "requests_per_second":  0.5111224693882087,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004752377739192604
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576597.0,
+        "anomaly":  false,
+        "score":  -0.05888338162591794,
+        "features":  {
+                         "requests_per_second":  0.5333807449551071,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004738077333324023
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576612.0,
+        "anomaly":  false,
+        "score":  -0.0468281672360219,
+        "features":  {
+                         "requests_per_second":  0.5111338281701409,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.0048615693043678266
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576627.0,
+        "anomaly":  false,
+        "score":  -0.09204766764176742,
+        "features":  {
+                         "requests_per_second":  0.5111565472486443,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004730158086994893
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576642.0,
+        "anomaly":  false,
+        "score":  -0.12259614840946076,
+        "features":  {
+                         "requests_per_second":  0.4889106182497,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004572617681953323
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576657.0,
+        "anomaly":  false,
+        "score":  -0.12293318592786057,
+        "features":  {
+                         "requests_per_second":  0.4889323495421815,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004513859318277273
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576672.0,
+        "anomaly":  false,
+        "score":  -0.11994604996306685,
+        "features":  {
+                         "requests_per_second":  0.4666874083292591,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004514829047712694
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576687.0,
+        "anomaly":  false,
+        "score":  -0.12004983600744257,
+        "features":  {
+                         "requests_per_second":  0.46670815183571873,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004557843238043936
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576702.0,
+        "anomaly":  false,
+        "score":  -0.11830795353027085,
+        "features":  {
+                         "requests_per_second":  0.4889106182497,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.0046244449545156385
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576717.0,
+        "anomaly":  false,
+        "score":  -0.08415886870752343,
+        "features":  {
+                         "requests_per_second":  0.4666977798519901,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004755070333279339
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576732.0,
+        "anomaly":  false,
+        "score":  -0.08804748769071069,
+        "features":  {
+                         "requests_per_second":  0.4666770372674949,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004729063666629719
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576747.0,
+        "anomaly":  false,
+        "score":  -0.1049614856721296,
+        "features":  {
+                         "requests_per_second":  0.4889214836544658,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.00468149254534596
+                     }
+    },
+    {
+        "state":  "normal",
+        "service":  "payment-api",
+        "timestamp":  1792576762.0,
+        "anomaly":  false,
+        "score":  -0.09284129239294758,
+        "features":  {
+                         "requests_per_second":  0.5333570380905818,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.0045731624998476645
+                     }
+    },
+    {
+        "state":  "anomaly",
+        "service":  "payment-api",
+        "timestamp":  1792576777.0,
+        "anomaly":  true,
+        "score":  0.005977531803325609,
+        "features":  {
+                         "requests_per_second":  0.5556049426615699,
+                         "errors_per_second":  0.0,
+                         "mean_latency_seconds":  0.004747387999886996
+                     }
+    }
+]

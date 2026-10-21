@@ -12,3 +12,14 @@ scrape_configs:
   - job_name: payment-api
     static_configs:
       - targets: ["payment-api:8000"]
+  - job_name: ml-api
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["ml-api:8002"]
+  - job_name: gateway
+    metrics_path: /internal/metrics
+    static_configs:
+      - targets: ["gateway:8080"]
+  - job_name: remediator
+    static_configs:
+      - targets: ["remediator:8081"]

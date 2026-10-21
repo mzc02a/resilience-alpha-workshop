@@ -9,6 +9,8 @@ services:
   auth-api:
     ports: !reset []
   payment-api:
+    environment:
+      LAB_DOS_ENABLED: "0"
     ports: !reset []
   waf:
     image: owasp/modsecurity-crs:4.25.0-nginx-lts@sha256:e59d31c76f7e6abf521bad9c42c113c47ec93b183bf36993df17e4fd6f65ed48

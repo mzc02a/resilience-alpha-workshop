@@ -1,0 +1,20 @@
+# Additional override for a deliberately capacity-limited laboratory ONLY.
+services:
+  remediator:
+    environment:
+      REMEDIATION_ENABLED: ${REMEDIATION_ENABLED:-1}
+  payment-api:
+    environment:
+      LAB_DOS_ENABLED: "1"
+  calibration:
+    profiles: [calibration]
+    build: ./Backend/security
+    command: ["python", "-u", "calibrate_dos.py"]
+    secrets: [control_token, probe_credentials]
+    volumes:
+      - ./Backend/security/runtime:/reports
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"

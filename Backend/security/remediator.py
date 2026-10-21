@@ -4,18 +4,20 @@ import json
 import logging
 import math
 import os
+import hmac
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Request, HTTPException
 from prometheus_client import Counter, Gauge, CONTENT_TYPE_LATEST, generate_latest
 
 log = logging.getLogger("uvicorn.error")
 TOKEN = Path("/run/secrets/control_token").read_text().strip()
 PROBE = json.loads(Path("/run/secrets/probe_credentials").read_text())
 MIN_RPS = float(os.getenv("REMEDIATION_MIN_RPS", "1.0"))
+ENABLED = os.getenv("REMEDIATION_ENABLED", "1") == "1"
 actions = Counter("remediation_actions_total", "Bounded protection actions", ["result"])
 verified = Gauge("remediation_payment_verified", "Last post-action payment and readback succeeded")
 state = {"state": "waiting_for_ml"}
@@ -82,6 +84,10 @@ async def run():
     async with httpx.AsyncClient(timeout=8, follow_redirects=False) as client:
         while True:
             try:
+                if not ENABLED:
+                    state = {"state": "observer_only"}
+                    await asyncio.sleep(5)
+                    continue
                 response = await client.get("http://ml-api:8002/status")
                 response.raise_for_status()
                 sample = response.json()
@@ -129,6 +135,23 @@ async def lifespan(app):
 
 
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None)
+probe_lock = asyncio.Lock()
+
+
+@app.post("/internal/probe")
+async def diagnostic_probe(request: Request):
+    """Fixed authenticated diagnostic, executed from a distinct legitimate source."""
+    if not hmac.compare_digest(request.headers.get("x-control-token", ""), TOKEN):
+        raise HTTPException(403, "Forbidden")
+    if probe_lock.locked():
+        raise HTTPException(409, "Probe in progress")
+    async with probe_lock:
+        async with httpx.AsyncClient(timeout=8) as client:
+            try:
+                payment_id = await verify_payment(client)
+                return {"payment_id": payment_id}
+            except (httpx.HTTPError, ValueError):
+                raise HTTPException(503, "Business probe failed")
 
 
 @app.get("/status")

@@ -8,6 +8,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections import Counter
+from pathlib import Path
+from bounded_load import run_load
 
 
 def main():
@@ -15,6 +17,7 @@ def main():
     parser.add_argument("--url", default="http://192.168.137.1:8080")
     parser.add_argument("--seconds", type=int, choices=range(15, 181), default=120, metavar="15..180")
     parser.add_argument("--rps", type=int, choices=range(1, 6), default=3)
+    parser.add_argument("--output", default="dos-traffic.json")
     args = parser.parse_args()
     target = urllib.parse.urlparse(args.url)
     try:
@@ -34,24 +37,11 @@ def main():
     except urllib.error.URLError:
         raise SystemExit("Connexion refusée ou indisponible ; aucun trafic de test lancé.")
     del password
-    results = Counter()
-    deadline = time.monotonic() + args.seconds
-    try:
-        while time.monotonic() < deadline:
-            started = time.monotonic()
-            req = urllib.request.Request(args.url.rstrip("/") + "/payments", headers={"Authorization": "Bearer " + token})
-            try:
-                with urllib.request.urlopen(req, timeout=3) as response:
-                    response.read()
-                    results[response.status] += 1
-            except urllib.error.HTTPError as exc:
-                results[exc.code] += 1
-            except (urllib.error.URLError, TimeoutError):
-                results["unavailable"] += 1
-            time.sleep(max(0, 1 / args.rps - (time.monotonic() - started)))
-    except KeyboardInterrupt:
-        pass
-    print(json.dumps({"requested_rps": args.rps, "statuses": dict(results)}))
+    records = run_load(args.url, token, args.seconds, args.rps)
+    report = {"requested_rps": args.rps, "duration_seconds": args.seconds,
+              "statuses": dict(Counter(str(row["status"]) for row in records)), "requests": records}
+    Path(args.output).write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(json.dumps({"statuses": report["statuses"], "report": args.output}))
 
 
 if __name__ == "__main__":

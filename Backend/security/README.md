@@ -82,6 +82,11 @@ X-Real-IP/X-Forwarded-For fournis par le client sont remplacés par le WAF.
 
 ## Recette
 
+Pour le **DoS HTTP avec dégradation métier mesurée**, suivre plutôt
+[DOS-HTTP.md](DOS-HTTP.md) : profil de capacité explicite, nouvelle calibration,
+sonde continue, charge concurrente plafonnée et preuve de reprise sous charge.
+Le scénario ci-dessous reste un simple test de trafic inhabituel en profil normal.
+
 1. Vérifier `/health`, puis un paiement normal via le frontend.
 2. Vérifier que le modèle est entraîné, sa collecte fraîche, et lancer le trafic
    normal via le WAF (adapter les deux URL du script normal_traffic à http://waf:8080
@@ -140,7 +145,8 @@ Contrôles WAF et remédiation ne remplacent pas le SIEM ni l'analyse de risques
 
 ## Script du PC attaquant autorisé
 
-Copier uniquement `lab_traffic.py` sur le PC attaquant (Python requis), puis :
+Copier `lab_traffic.py` et `bounded_load.py` dans le même dossier sur le PC
+attaquant (Python requis), puis :
 
 ```powershell
 python lab_traffic.py --url http://192.168.137.1:8080 --rps 3 --seconds 120

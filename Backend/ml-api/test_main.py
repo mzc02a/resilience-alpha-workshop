@@ -11,6 +11,14 @@ import main
 
 
 class DetectorTests(unittest.TestCase):
+    def test_selected_training_window(self):
+        rows = [(i * 15, [0.5 + (i % 3) * 0.01, 0, 1.0]) for i in range(65)]
+        collector = AsyncMock(return_value=rows)
+        with patch.object(main, "observations", collector), patch.object(main.time, "time", return_value=10000):
+            result = asyncio.run(main.train(minutes=16))
+        collector.assert_awaited_once_with(9025, 9985)
+        self.assertEqual(result["samples"], 65)
+
     def test_train_rejects_missing_data(self):
         with patch.object(main, "observations", AsyncMock(return_value=[])):
             with self.assertRaises(HTTPException) as error:

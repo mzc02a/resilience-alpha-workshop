@@ -1,318 +1,406 @@
 {
-  "uid": "resilience-security",
-  "title": "RESILIENCE-ALPHA - WAF et remediation",
-  "schemaVersion": 39,
-  "version": 1,
-  "refresh": "10s",
-  "time": {
-    "from": "now-15m",
-    "to": "now"
-  },
-  "tags": [
-    "resilience",
-    "security",
-    "ml"
-  ],
-  "panels": [
-    {
-      "id": 1,
-      "title": "Modèle entraîné",
-      "type": "stat",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 6,
-        "h": 5
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "ml_model_ready{service=\"payment-api\"}",
-          "legendFormat": "{{result}}",
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        }
-      }
-    },
-    {
-      "id": 2,
-      "title": "Collecte ML disponible",
-      "type": "stat",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 0,
-        "w": 6,
-        "h": 5
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "ml_telemetry_available{service=\"payment-api\"}",
-          "legendFormat": "{{result}}",
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        }
-      }
-    },
-    {
-      "id": 3,
-      "title": "Protection active",
-      "type": "stat",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 0,
-        "w": 6,
-        "h": 5
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "gateway_protection_active",
-          "legendFormat": "{{result}}",
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        }
-      }
-    },
-    {
-      "id": 4,
-      "title": "Dernière sonde paiement réussie",
-      "type": "stat",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 18,
-        "y": 0,
-        "w": 6,
-        "h": 5
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "remediation_payment_verified",
-          "legendFormat": "{{result}}",
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        }
-      }
-    },
-    {
-      "id": 5,
-      "title": "Détection ML",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 5,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "ml_anomaly_detected{service=\"payment-api\"}",
-          "legendFormat": "{{result}}",
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 3
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      }
-    },
-    {
-      "id": 6,
-      "title": "Score ML",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 5,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "ml_anomaly_score{service=\"payment-api\"}",
-          "legendFormat": "{{result}}",
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 3
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      }
-    },
-    {
-      "id": 7,
-      "title": "Requêtes limitées par seconde",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 13,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(rate(gateway_blocked_requests_total{reason=\"rate_limit\"}[1m]))",
-          "legendFormat": "{{result}}",
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 3
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      }
-    },
-    {
-      "id": 8,
-      "title": "Actions de remédiation",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 13,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (result) (remediation_actions_total)",
-          "legendFormat": "{{result}}",
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 3
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      }
-    }
-  ]
+    "uid":  "resilience-security",
+    "title":  "RESILIENCE-ALPHA - WAF et remediation",
+    "schemaVersion":  39,
+    "version":  2,
+    "refresh":  "10s",
+    "time":  {
+                 "from":  "now-15m",
+                 "to":  "now"
+             },
+    "tags":  [
+                 "resilience",
+                 "security",
+                 "ml"
+             ],
+    "panels":  [
+                   {
+                       "id":  1,
+                       "title":  "Modèle entraîné",
+                       "type":  "stat",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "x":  0,
+                                       "y":  0,
+                                       "w":  6,
+                                       "h":  5
+                                   },
+                       "targets":  [
+                                       {
+                                           "refId":  "A",
+                                           "expr":  "ml_model_ready{service=\"payment-api\"}",
+                                           "legendFormat":  "{{result}}",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  0
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "values":  false
+                                                         }
+                                   }
+                   },
+                   {
+                       "id":  2,
+                       "title":  "Collecte ML disponible",
+                       "type":  "stat",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "x":  6,
+                                       "y":  0,
+                                       "w":  6,
+                                       "h":  5
+                                   },
+                       "targets":  [
+                                       {
+                                           "refId":  "A",
+                                           "expr":  "ml_telemetry_available{service=\"payment-api\"}",
+                                           "legendFormat":  "{{result}}",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  0
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "values":  false
+                                                         }
+                                   }
+                   },
+                   {
+                       "id":  3,
+                       "title":  "Protection active",
+                       "type":  "stat",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "x":  12,
+                                       "y":  0,
+                                       "w":  6,
+                                       "h":  5
+                                   },
+                       "targets":  [
+                                       {
+                                           "refId":  "A",
+                                           "expr":  "gateway_protection_active",
+                                           "legendFormat":  "{{result}}",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  0
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "values":  false
+                                                         }
+                                   }
+                   },
+                   {
+                       "id":  4,
+                       "title":  "Dernière sonde paiement réussie",
+                       "type":  "stat",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "x":  18,
+                                       "y":  0,
+                                       "w":  6,
+                                       "h":  5
+                                   },
+                       "targets":  [
+                                       {
+                                           "refId":  "A",
+                                           "expr":  "remediation_payment_verified",
+                                           "legendFormat":  "{{result}}",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  0
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "values":  false
+                                                         }
+                                   }
+                   },
+                   {
+                       "id":  5,
+                       "title":  "Détection ML",
+                       "type":  "timeseries",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "x":  0,
+                                       "y":  5,
+                                       "w":  12,
+                                       "h":  8
+                                   },
+                       "targets":  [
+                                       {
+                                           "refId":  "A",
+                                           "expr":  "ml_anomaly_detected{service=\"payment-api\"}",
+                                           "legendFormat":  "{{result}}",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  3
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "list",
+                                                      "placement":  "bottom"
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "single"
+                                                   }
+                                   }
+                   },
+                   {
+                       "id":  6,
+                       "title":  "Score ML",
+                       "type":  "timeseries",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "x":  12,
+                                       "y":  5,
+                                       "w":  12,
+                                       "h":  8
+                                   },
+                       "targets":  [
+                                       {
+                                           "refId":  "A",
+                                           "expr":  "ml_anomaly_score{service=\"payment-api\"}",
+                                           "legendFormat":  "{{result}}",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  3
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "list",
+                                                      "placement":  "bottom"
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "single"
+                                                   }
+                                   }
+                   },
+                   {
+                       "id":  7,
+                       "title":  "Requêtes limitées par seconde",
+                       "type":  "timeseries",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "x":  0,
+                                       "y":  13,
+                                       "w":  12,
+                                       "h":  8
+                                   },
+                       "targets":  [
+                                       {
+                                           "refId":  "A",
+                                           "expr":  "sum(rate(gateway_blocked_requests_total{reason=\"rate_limit\"}[1m]))",
+                                           "legendFormat":  "{{result}}",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  3
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "list",
+                                                      "placement":  "bottom"
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "single"
+                                                   }
+                                   }
+                   },
+                   {
+                       "id":  8,
+                       "title":  "Actions de remédiation",
+                       "type":  "timeseries",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "x":  12,
+                                       "y":  13,
+                                       "w":  12,
+                                       "h":  8
+                                   },
+                       "targets":  [
+                                       {
+                                           "refId":  "A",
+                                           "expr":  "sum by (result) (remediation_actions_total)",
+                                           "legendFormat":  "{{result}}",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  3
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "list",
+                                                      "placement":  "bottom"
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "single"
+                                                   }
+                                   }
+                   },
+                   {
+                       "id":  9,
+                       "title":  "Erreurs 503 - capacite laboratoire",
+                       "type":  "timeseries",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "y":  21,
+                                       "w":  12,
+                                       "h":  8,
+                                       "x":  0
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "sum(rate(http_requests_total{job=\"payment-api\",status=\"503\"}[1m]))",
+                                           "refId":  "A",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  3
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "legend":  {
+                                                      "placement":  "bottom",
+                                                      "displayMode":  "list"
+                                                  }
+                                   }
+                   },
+                   {
+                       "id":  10,
+                       "title":  "Latence moyenne paiement (s)",
+                       "type":  "timeseries",
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "gridPos":  {
+                                       "y":  21,
+                                       "w":  12,
+                                       "h":  8,
+                                       "x":  12
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "sum(rate(http_request_duration_seconds_sum{job=\"payment-api\"}[1m])) / clamp_min(sum(rate(http_request_duration_seconds_count{job=\"payment-api\"}[1m])), 0.000001)",
+                                           "refId":  "A",
+                                           "range":  true
+                                       }
+                                   ],
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "decimals":  3
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "options":  {
+                                       "legend":  {
+                                                      "placement":  "bottom",
+                                                      "displayMode":  "list"
+                                                  }
+                                   }
+                   }
+               ]
 }

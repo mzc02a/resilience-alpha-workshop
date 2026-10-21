@@ -23,3 +23,20 @@ Ce test prouve le raccordement ML → action automatique → vérification méti
 Il ne démontre pas encore une panne métier initiale, une reprise après une attaque
 depuis le deuxième PC, ni le taux de détection général du modèle. Ces recettes
 restent à réaliser sur le hotspot de laboratoire et à filmer.
+
+## Profil DoS HTTP à capacité réduite
+
+Le profil optionnel a été vérifié séparément : deux opérations simultanées,
+une seconde de travail simulé, 50 ms d'attente maximale. Sous une charge bornée
+de quatre requêtes/s depuis une source distincte de la sonde, cinq sondes métier
+sur cinq ont échoué avant protection. Après activation explicite du limiteur
+par la recette de composants, trois paiements ont été créés et relus avec succès
+pendant que la charge continuait. Le trafic a reçu 18 réponses 503, 31 réponses
+200 et 43 réponses 429 sur l'ensemble de ce test.
+
+Cette recette isole l'efficacité de l'action, sans la présenter comme un
+déclenchement ML. Le nouveau profil exige une nouvelle référence ML : calibration
+automatique lancée après ces tests, résultats à consulter dans
+runtime/dos-calibration.json. La recette à deux PC reste à exécuter ensuite.
+Les 14 tests unitaires applicatifs, ML et sécurité passent, dont saturation,
+libération des places après annulation et sélection de la fenêtre d'entraînement.

@@ -6,13 +6,8 @@ from decimal import Decimal
 from typing import Literal
 
 import jwt
-<<<<<<< HEAD
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from prometheus_client import Counter, Histogram, CONTENT_TYPE_LATEST, generate_latest
-=======
-from prometheus_fastapi_instrumentator import Instrumentator
-from fastapi import FastAPI, Depends, HTTPException
->>>>>>> 9048423 (feat: monitoring Prometheus Grafana et logs Loki Alloy)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
@@ -137,7 +132,6 @@ app = FastAPI(
     version="3.0",
 )
 
-<<<<<<< HEAD
 # Fixed status labels keep cardinality bounded; never label by user or payment ID.
 http_requests = Counter("http_requests_total", "Completed business HTTP requests", ["status"])
 http_duration = Histogram("http_request_duration_seconds", "Business HTTP request duration")
@@ -163,11 +157,6 @@ async def observe_requests(request: Request, call_next):
 @app.get("/metrics", include_in_schema=False)
 def metrics():
     return Response(generate_latest(), headers={"Content-Type": CONTENT_TYPE_LATEST})
-=======
-Instrumentator(
-    excluded_handlers=["/metrics"],
-).instrument(app).expose(app, include_in_schema=False)
->>>>>>> 9048423 (feat: monitoring Prometheus Grafana et logs Loki Alloy)
 
 app.add_middleware(
     CORSMiddleware,

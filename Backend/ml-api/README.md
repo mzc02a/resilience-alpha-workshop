@@ -1,8 +1,14 @@
-# Détection d'anomalies — premier composant ML
+# Détection d'anomalies — référence persistante et covariance régularisée
 
-Isolation Forest apprend une référence explicitement choisie par l'opérateur.
-Pas de réentraînement automatique pendant un incident. Modèle en mémoire : après
-redémarrage, il faut réentraîner. Aucun accès Docker, secret DB ou action de remédiation.
+Le detecteur courant apprend une covariance OAS avec regularisation de mesure,
+sur une reference explicitement choisie par l'operateur. Isolation Forest reste
+uniquement dans l'outil de diagnostic pour reconstruire les anciens scores.
+Pas d'apprentissage sur le trafic d'incident : une reference deja acceptee est
+persistee dans ml_model_data puis restauree au redemarrage si le profil correspond.
+Aucun acces Docker, secret DB ou action de remediation depuis le ML.
+
+Pour reprendre l'essai sans refaire 20 minutes : voir
+[REPRISE-SANS-20-MIN.md](../../cyber/REPRISE-SANS-20-MIN.md).
 
 ## Contrat avec le responsable Prometheus / Grafana
 

@@ -20,9 +20,11 @@ $maintenant = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 if ($sante.model_ready -ne $true -or $calibration.state -ne 'ready') {
     throw 'Calibration absente ou modele non pret : terminer la preparation hors jury.'
 }
-if ($ml.state -ne 'normal' -or $null -eq $ml.timestamp -or
-    $maintenant - [double]$ml.timestamp -gt 60 -or [double]$ml.timestamp -gt $maintenant) {
-    throw 'Le ML ne confirme pas un etat normal recent. Attendre ou diagnostiquer avant le passage.'
+if ($calibration.training.model_id -and $sante.model_id -ne $calibration.training.model_id) {
+    throw 'Le modele actuel ne correspond pas a la recette validee. Relancer reparer-calibration.ps1.'
+}
+if ($ml.state -notin @('normal', 'anomaly', 'trained_waiting_for_analysis')) {
+    throw "Collecte ML non utilisable : $($ml.state). Verifier les dependances."
 }
 if ($controleur.state -ne 'monitoring') {
     throw "Controleur non pret : $($controleur.state)."
@@ -45,7 +47,8 @@ if (($protectionBrute -join "`n") -notmatch '(?m)^gateway_protection_active 0(?:
     throw 'La protection doit etre inactive au depart.'
 }
 
-Write-Host 'PRET : profil de laboratoire actif, modele normal, protection inactive.' -ForegroundColor Green
+Write-Host 'PRET : profil de laboratoire actif, modele charge, protection inactive.' -ForegroundColor Green
+Write-Host 'La sonde doit confirmer le retour du ML a normal avant de donner le signal au PC 2.'
 Write-Host 'Ouvrir Grafana. La sonde va creer des paiements fictifs de 1 EUR pendant 240s.'
 $null = Read-Host 'Pour commencer la demonstration, appuyer sur Entree'
 $rapport = "jury-business-probe-{0}.json" -f (Get-Date -Format 'yyyyMMdd-HHmmss')
@@ -63,8 +66,16 @@ $signalEnvoye = $false
                 $reussites++
                 Write-Host "$heure PAIEMENT REUSSI ET RELU - $($sonde.payment_id)" -ForegroundColor Green
                 if ($reussites -ge 2 -and -not $signalEnvoye) {
-                    Write-Host 'SIGNAL : le PC 2 peut lancer son trafic maintenant.' -ForegroundColor Cyan
-                    $signalEnvoye = $true
+                    $etatML = Invoke-RestMethod 'http://localhost:8002/status' -TimeoutSec 5
+                    $heureActuelle = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+                    if ($etatML.state -eq 'normal' -and $null -ne $etatML.timestamp -and
+                        $heureActuelle - [double]$etatML.timestamp -le 60 -and
+                        [double]$etatML.timestamp -le $heureActuelle) {
+                        Write-Host 'SIGNAL : le PC 2 peut lancer son trafic maintenant.' -ForegroundColor Cyan
+                        $signalEnvoye = $true
+                    } else {
+                        Write-Host 'Reference metier en cours : attendre le retour du ML a normal, sans attaque.' -ForegroundColor Yellow
+                    }
                 }
             } else {
                 Write-Host "$heure ECHEC METIER - POST=$($sonde.post_status) lecture=$($sonde.read_status) erreur=$($sonde.error_type)" -ForegroundColor Red

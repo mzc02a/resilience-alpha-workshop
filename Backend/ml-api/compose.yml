@@ -6,6 +6,12 @@ services:
     environment:
       PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
       TARGET_JOB: payment-api
+      MODEL_STATE_PATH: /model/baseline.json
+    volumes:
+      - ml_model_data:/model
     ports:
       - "127.0.0.1:8002:8002"
     restart: unless-stopped
+
+volumes:
+  ml_model_data:

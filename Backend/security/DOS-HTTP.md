@@ -1,5 +1,10 @@
 # DoS HTTP contrôlé — profil pédagogique à capacité réduite
 
+Si une reference existe deja et que sa validation a echoue, utiliser
+[la reprise courte](../../cyber/REPRISE-SANS-20-MIN.md) au lieu de recommencer
+la collecte. Le detecteur courant est une covariance OAS regularisee ;
+les rapports Isolation Forest anterieurs restent des preuves de l'ancienne version.
+
 **Authentification mise a jour :** suivre d'abord [SESSION-PREPARATION.md](SESSION-PREPARATION.md).
 Les sondes utilisent des sessions obtenues par le parcours facial complet et un
 IBAN destinataire existant. Les anciennes inscriptions JSON ne sont plus utilisees.

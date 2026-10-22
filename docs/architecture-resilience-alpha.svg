@@ -66,7 +66,7 @@
 <text x="550" y="900" text-anchor="middle" class="small">API, passerelle, ML, contrôleur</text>
 <text x="550" y="926" text-anchor="middle" class="small">Historique des métriques</text>
 <rect x="790" y="800" width="255" height="120" class="box" fill="#ffe4e9" stroke="#da3150"/>
-<text x="917" y="839" text-anchor="middle" class="head">ML · Isolation Forest</text>
+<text x="917" y="839" text-anchor="middle" class="head">ML · Covariance OAS</text>
 <text x="917" y="877" text-anchor="middle" class="body">Détection d’anomalies</text>
 <rect x="1430" y="800" width="300" height="135" class="box" fill="#fff2cc" stroke="#df9b00"/>
 <text x="1580" y="842" text-anchor="middle" class="head">Contrôleur</text>

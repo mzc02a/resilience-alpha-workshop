@@ -11,6 +11,19 @@ import main
 
 
 class DetectorTests(unittest.TestCase):
+    def setUp(self):
+        self.profile = patch.object(main, 'current_profile', AsyncMock(return_value={
+            'enabled': True, 'slots': 2, 'simulated_work_seconds': 1.0}))
+        self.profile.start()
+        self.addCleanup(self.profile.stop)
+        self.saved = (main.model, main.model_metadata, main.latest, main.STATE_PATH)
+        main.model_metadata = {}
+        main.STATE_PATH = None
+        self.addCleanup(self.restore_globals)
+
+    def restore_globals(self):
+        main.model, main.model_metadata, main.latest, main.STATE_PATH = self.saved
+
     def test_selected_training_window(self):
         rows = [(i * 15, [0.5 + (i % 3) * 0.01, 0, 1.0]) for i in range(65)]
         collector = AsyncMock(return_value=rows)

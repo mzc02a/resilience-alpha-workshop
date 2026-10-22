@@ -12,6 +12,9 @@ Recuperer les fichiers de cette version puis :
 .\cyber\reparer-calibration.ps1
 ```
 
+Si l'image vient deja d'etre reconstruite et que le ML repond, reprendre sans
+nouvelle reconstruction : `.\cyber\reparer-calibration.ps1 -SkipBuild`.
+
 Le lanceur :
 
 1. Verifie que la session de sonde a au moins dix minutes restantes.

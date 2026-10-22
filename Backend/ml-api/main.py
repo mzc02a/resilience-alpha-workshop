@@ -4,10 +4,11 @@ import logging
 import math
 import os
 import time
+from typing import Annotated
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Query
 from prometheus_client import Gauge, CONTENT_TYPE_LATEST, generate_latest
 from sklearn.ensemble import IsolationForest
 
@@ -118,7 +119,7 @@ def metrics():
 
 
 @app.post("/train")
-async def train():
+async def train(minutes: Annotated[int, Query(ge=16, le=120)] = 30):
     """Operator explicitly certifies the preceding 30 minutes as baseline."""
     global model, training, latest
     if training:
@@ -126,7 +127,7 @@ async def train():
     training = True
     try:
         end = int(time.time()) - INTERVAL
-        rows = await observations(end - 1800, end)
+        rows = await observations(end - minutes * 60, end)
         if len(rows) < MIN_SAMPLES:
             raise HTTPException(409, "Need at least 60 complete healthy observations, 15s apart")
         candidate = IsolationForest(n_estimators=100, contamination="auto", random_state=42, n_jobs=1)

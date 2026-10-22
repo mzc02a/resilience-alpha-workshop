@@ -21,7 +21,10 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
     ports:
-      - "127.0.0.1:8001:8001"
+     - "192.168.137.1:8001:8001"
+     - "127.0.0.1:8001:8001" 
+
+    
     depends_on:
       db:
         condition: service_healthy
@@ -32,7 +35,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
     ports:
-      - "127.0.0.1:8000:8000"
+     - "192.168.137.1:8000:8000"
+     - "127.0.0.1:8000:8000" 
     depends_on:
       db:
         condition: service_healthy

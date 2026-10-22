@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py bank_accounts.py .
+COPY main.py bank_accounts.py lab_capacity.py .
 
 EXPOSE 8000
 

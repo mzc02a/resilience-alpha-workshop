@@ -1,0 +1,70 @@
+# Always combine base + ml + security overrides; Compose >= 2.24.4 required.
+name: resilience-alpha-workshop
+services:
+  alloy:
+    environment:
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-resilience-alpha-workshop}
+  db:
+    ports: !reset []
+  auth-api:
+    ports: !reset []
+  payment-api:
+    environment:
+      LAB_DOS_ENABLED: "0"
+    ports: !reset []
+  waf:
+    image: owasp/modsecurity-crs:4.25.0-nginx-lts@sha256:e59d31c76f7e6abf521bad9c42c113c47ec93b183bf36993df17e4fd6f65ed48
+    environment:
+      BACKEND: http://gateway:8080
+      PORT: "8080"
+      MODSEC_RULE_ENGINE: "On"
+      BLOCKING_PARANOIA: "1"
+      DETECTION_PARANOIA: "1"
+      MODSEC_AUDIT_LOG: /dev/stdout
+      # Metadata/rule IDs only; do not log Authorization, password or request bodies.
+      MODSEC_AUDIT_LOG_PARTS: "AHZ"
+      MODSEC_REQ_BODY_LIMIT: "65536"
+      MODSEC_REQ_BODY_NOFILES_LIMIT: "65536"
+    ports:
+      - "127.0.0.1:8000:8080"
+      - "127.0.0.1:8001:8080"
+      - "${LAB_BIND_IP:-127.0.0.1}:8080:8080"
+    volumes:
+      - ./Backend/security/exclusions.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro
+      - ./Backend/security/proxy_backend.conf.template:/etc/nginx/templates/includes/proxy_backend.conf.template:ro
+    depends_on:
+      - gateway
+    restart: unless-stopped
+  gateway:
+    build: ./Backend/security
+    secrets:
+      - control_token
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      - auth-api
+      - payment-api
+    restart: unless-stopped
+  remediator:
+    build: ./Backend/security
+    command: ["uvicorn", "remediator:app", "--host", "0.0.0.0", "--port", "8081", "--no-access-log"]
+    secrets:
+      - control_token
+      - probe_credentials
+    ports:
+      - "127.0.0.1:8003:8081"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      - waf
+      - ml-api
+    restart: unless-stopped
+secrets:
+  control_token:
+    file: ./Backend/security/runtime/control-token.txt
+  probe_credentials:
+    file: ./Backend/security/runtime/probe.json

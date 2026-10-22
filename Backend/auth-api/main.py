@@ -11,14 +11,14 @@ from typing import Literal
 
 import jwt
 from prometheus_fastapi_instrumentator import Instrumentator
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Response
 from face_auth import compare as compare_face, reference_path, models_available, MAX_IMAGE_BYTES, feature as face_feature
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from bank_accounts import Account, create_account, schema_lock
 from pwdlib import PasswordHash
-from sqlalchemy import create_engine, String, Integer, Float, Boolean, Text, ForeignKey, select, inspect, text
+from sqlalchemy import create_engine, String, Integer, Float, Boolean, Text, ForeignKey, select, inspect, text, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -181,6 +181,7 @@ app.add_middleware(
         "GET",
         "POST",
         "PATCH",
+        "DELETE",
         "OPTIONS",
     ],
     allow_headers=[
@@ -707,6 +708,24 @@ def update_user_role(
         role=user.role,
         iban=db.get(Account, user.id).iban if db.get(Account, user.id) else None,
     )
+
+
+@app.delete("/admin/users/{user_id}", status_code=204)
+def delete_user(user_id: str, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    if user_id == admin.id:
+        raise HTTPException(400, "Vous ne pouvez pas supprimer votre propre compte administrateur")
+    # Serialize against transfers on this account; never rewrite the historical ledger.
+    db.scalar(select(Account).where(Account.user_id == user_id).with_for_update())
+    user = db.scalar(select(User).where(User.id == user_id).with_for_update())
+    if user is None:
+        raise HTTPException(404, "Utilisateur introuvable")
+    db.execute(delete(FaceReference).where(FaceReference.user_id == user_id))
+    db.execute(delete(FaceLoginState).where(FaceLoginState.user_id == user_id))
+    db.execute(delete(Account).where(Account.user_id == user_id))
+    db.delete(user)
+    db.commit()
+    logging.getLogger("uvicorn.error").info("admin_user_deleted admin_id=%s user_id=%s history_preserved=true", admin.id, user_id)
+    return Response(status_code=204)
 
 
 @app.patch("/auth/me", response_model=UserResponse)

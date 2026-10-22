@@ -24,6 +24,19 @@ buckets = OrderedDict()
 BUCKET_CAPACITY = 3.0
 RATE = 1.0
 MAX_CLIENTS = 4096
+DEFAULT_BODY_LIMIT = 65536
+IMAGE_BODY_LIMIT = 4 * 1024 * 1024 + 65536  # image + bounded multipart metadata
+
+
+def request_body_limit(method, path):
+    return IMAGE_BODY_LIMIT if method == "POST" and path in ("auth/register", "auth/face/verify") else DEFAULT_BODY_LIMIT
+
+
+def public_route_allowed(path):
+    return (path in ("health", "accounts/me", "beneficiaries", "payments")
+            or path.startswith(("auth/", "payments/", "admin/")))
+
+
 FORBIDDEN_HEADERS = {"host", "connection", "content-length", "transfer-encoding", "keep-alive", "upgrade", "te", "trailer", "proxy-authorization", "proxy-authenticate"}
 
 
@@ -53,7 +66,7 @@ async def lifespan(app):
 
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-                   allow_methods=["GET", "POST", "PATCH", "OPTIONS"], allow_headers=["Authorization", "Content-Type"])
+                   allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "Idempotency-Key"])
 
 
 def authorize(request):
@@ -85,7 +98,7 @@ def metrics():
 async def proxy(path: str, request: Request):
     # The official WAF template overwrites X-Real-IP with its TCP peer address.
     # Public access to internal endpoints is blocked at the WAF as well.
-    if not (path == "health" or path.startswith(("auth/", "payments", "admin/"))):
+    if not public_route_allowed(path):
         raise HTTPException(404, "Not found")
     source = request.headers.get("x-real-ip", "")
     try:
@@ -98,9 +111,10 @@ async def proxy(path: str, request: Request):
         return Response('{"detail":"Temporary rate limit"}', status_code=429,
                         headers={"Retry-After": "1", "Content-Type": "application/json"})
     payload = bytearray()
+    body_limit = request_body_limit(request.method, path)
     async for chunk in request.stream():
         payload.extend(chunk)
-        if len(payload) > 65536:
+        if len(payload) > body_limit:
             blocked.labels("body_size").inc()
             raise HTTPException(413, "Request too large")
     backend = "auth-api:8001" if path.startswith(("auth/", "admin/users")) else "payment-api:8000"

@@ -248,6 +248,7 @@ def get_db():
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer),
+    db: Session = Depends(get_db),
 ):
     try:
         payload = jwt.decode(
@@ -282,6 +283,11 @@ def get_current_user(
 
         if role not in ("user", "admin"):
             raise ValueError("Invalid role")
+
+        users = table("users", column("id"), column("role"))
+        existing = db.execute(select(users.c.role).where(users.c.id == user_id)).one_or_none()
+        if existing is None or existing.role != role:
+            raise ValueError("User deleted or role changed")
 
         return {
             "user_id": user_id,

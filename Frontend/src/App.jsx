@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import BackOfficeLogin from "./BackOfficeLogin";
 import FaceVerification from "./FaceVerification";
+import { readSession, saveSession, SESSION_KEY } from "./session";
 
 const AUTH_API = "http://localhost:8001";
 const PAYMENT_API = "http://localhost:8000";
@@ -10,9 +11,12 @@ export default function App() {
   // STATES
   // ============================
 
-  const [page, setPage] = useState("login");
+  const [initialSession] = useState(readSession);
+  const [page, setPage] = useState(initialSession.page);
+  const [restoring, setRestoring] = useState(Boolean(initialSession.token));
+  const [restoreError, setRestoreError] = useState("");
   const [registrationImage, setRegistrationImage] = useState(null);
-  const [dashboardTab, setDashboardTab] = useState("overview");
+  const [dashboardTab, setDashboardTab] = useState(initialSession.dashboardTab);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -21,26 +25,16 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(initialSession.token || "");
   const [profile, setProfile] = useState(null);
-  const [faceExpiresAt, setFaceExpiresAt] = useState(0);
+  const [faceExpiresAt, setFaceExpiresAt] = useState(initialSession.faceExpiresAt || 0);
   const adminVerified = faceExpiresAt > Date.now() / 1000;
 
   useEffect(() => {
     if (!faceExpiresAt) return;
     const timer = setTimeout(() => {
-      setToken("");
-      activeToken.current = "";
-      setWallet(null);
-      setBeneficiaries([]);
-      setRecipientIban("");
-      setProfile(null);
-      setPage("login");
+      logout();
       setMessage("Session expiree : recommence la connexion.");
-      setFaceExpiresAt(0);
-      setAllPayments([]);
-      setUsers([]);
-      setStats(null);
     }, Math.max(0, faceExpiresAt * 1000 - Date.now()));
     return () => clearTimeout(timer);
   }, [faceExpiresAt]);
@@ -63,6 +57,44 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [roleUpdatingId, setRoleUpdatingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+
+  useEffect(() => {
+    if (!restoring) saveSession({ token, faceExpiresAt, page, dashboardTab });
+  }, [token, faceExpiresAt, page, dashboardTab, restoring]);
+
+  useEffect(() => {
+    if (!initialSession.token) return;
+    let cancelled = false;
+    const accessToken = initialSession.token;
+    activeToken.current = accessToken;
+    async function restore() {
+      try {
+        const user = await request(`${AUTH_API}/auth/me`, { headers: authHeaders(accessToken) });
+        if (cancelled) return;
+        setProfile(user);
+        setFirstName(user.first_name || "");
+        setLastName(user.last_name || "");
+        setPage("dashboard");
+        if (user.role !== "admin") setDashboardTab("overview");
+        try { await loadAccountData(accessToken); }
+        catch { if (!cancelled) setMessage("Session restauree. Le compte est momentanement indisponible."); }
+        if (!cancelled && user.role === "admin") await loadAdminDashboard(accessToken);
+      } catch (error) {
+        if (cancelled) return;
+        if (error.status === 401 || error.status === 403) {
+          logout();
+          setMessage("Session expiree ou revoquee : reconnectez-vous.");
+        } else {
+          setRestoreError("Impossible de restaurer la session. Verifiez la connexion puis reessayez.");
+        }
+      } finally {
+        if (!cancelled) setRestoring(false);
+      }
+    }
+    restore();
+    return () => { cancelled = true; };
+  }, [initialSession]);
 
   // ============================
   // API HELPERS
@@ -82,11 +114,13 @@ export default function App() {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(
+      const error = new Error(
         typeof data.detail === "string"
           ? data.detail
           : `Erreur HTTP ${response.status}`
       );
+      error.status = response.status;
+      throw error;
     }
 
     return data;
@@ -289,6 +323,7 @@ export default function App() {
           }),
         ]);
 
+      if (activeToken.current !== accessToken) return;
       setAllPayments(transactions);
       setStats(statistics);
       setUsers(userList);
@@ -347,11 +382,31 @@ export default function App() {
     }
   }
 
+  async function deleteUser(user) {
+    if (user.id === profile?.id || deletingId) return;
+    if (!window.confirm(`Supprimer definitivement le compte de ${personName(user) || user.email} (${user.email}) ? Son acces et son compte seront supprimes. L'historique des virements sera conserve.`)) return;
+    setDeletingId(user.id);
+    setMessage("");
+    try {
+      await request(`${AUTH_API}/admin/users/${user.id}`, { method: "DELETE", headers: authHeaders() });
+      setUsers(current => current.filter(item => item.id !== user.id));
+      setBeneficiaries(current => current.filter(item => item.user_id !== user.id));
+      setMessage("Utilisateur supprime. L'historique des virements est conserve.");
+      await loadAdminDashboard(token);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   // ============================
   // LOGOUT
   // ============================
 
   function logout() {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch { /* unavailable storage */ }
+    setRestoreError("");
     setToken("");
     activeToken.current = "";
     setWallet(null);
@@ -420,6 +475,13 @@ export default function App() {
   // ============================
   // UI
   // ============================
+
+  if (restoring || restoreError) return (
+    <main className="container" aria-live="polite">
+      <p>{restoreError || "Restauration de votre session..."}</p>
+      {restoreError && <button type="button" onClick={() => window.location.reload()}>Reessayer</button>}
+    </main>
+  );
 
   return (
     <main className={page === "dashboard" ? "app-shell" : "app-shell auth-shell"}>
@@ -662,10 +724,16 @@ export default function App() {
                           <td><span className={`role-badge ${user.role === "admin" ? "role-admin" : ""}`}>{user.role === "admin" ? "Administrateur" : "Utilisateur"}</span></td>
                           <td className="numeric">
                             <button type="button" className="button-outline button-small"
-                              disabled={roleUpdatingId === user.id || user.id === profile.id}
+                              disabled={roleUpdatingId === user.id || Boolean(deletingId) || user.id === profile.id}
                               onClick={() => changeUserRole(user.id, user.role === "admin" ? "user" : "admin")}>
                               {roleUpdatingId === user.id ? "Modification..." : user.role === "admin" ? "Passer utilisateur" : "Passer administrateur"}
                             </button>
+                            {user.id !== profile.id && <button type="button" className="button-outline button-small"
+                              style={{ marginLeft: 8, color: "#b42318" }}
+                              disabled={Boolean(deletingId) || Boolean(roleUpdatingId)}
+                              onClick={() => deleteUser(user)}>
+                              {deletingId === user.id ? "Suppression..." : "Supprimer"}
+                            </button>}
                           </td>
                         </tr>
                       ))}

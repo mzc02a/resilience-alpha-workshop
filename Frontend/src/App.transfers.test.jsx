@@ -19,6 +19,7 @@ const response = (data, ok = true) => ({ ok, json: async () => data });
 let balance, post;
 
 beforeEach(() => {
+  sessionStorage.clear();
   balance = "500.00";
   let next = 0;
   vi.stubGlobal("crypto", { randomUUID: () => "test-transfer-key-" + (++next) });
@@ -35,7 +36,7 @@ beforeEach(() => {
     throw new Error("Unexpected request: " + url);
   }));
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); sessionStorage.clear(); vi.unstubAllGlobals(); });
 
 async function login() {
   render(<App />);

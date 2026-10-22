@@ -7,6 +7,33 @@ from remediator import Policy
 
 
 class PolicyTests(unittest.TestCase):
+    def test_transfer_preflight_accepts_idempotency_header(self):
+        import asyncio
+        import httpx
+        async def scenario():
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=gateway.app), base_url="http://gateway") as client:
+                for origin in ("http://localhost:5173", "http://127.0.0.1:5173"):
+                    result = await client.options("/payments", headers={"Origin": origin,
+                        "Access-Control-Request-Method": "POST",
+                        "Access-Control-Request-Headers": "authorization,content-type,idempotency-key"})
+                    self.assertEqual(result.status_code, 200)
+                    self.assertEqual(result.headers["access-control-allow-origin"], origin)
+                    self.assertIn("idempotency-key", result.headers["access-control-allow-headers"].lower())
+        asyncio.run(scenario())
+
+    def test_account_routes_are_public_but_management_is_not(self):
+        for path in ("accounts/me", "beneficiaries", "payments", "payments/test-id", "auth/login"):
+            self.assertTrue(gateway.public_route_allowed(path))
+        for path in ("accounts/all", "beneficiaries/private", "internal/protection", "metrics", "payments-unsafe"):
+            self.assertFalse(gateway.public_route_allowed(path))
+
+    def test_image_upload_limits_are_route_specific(self):
+        for route in ("auth/register", "auth/face/verify"):
+            self.assertEqual(gateway.request_body_limit("POST", route), 4259840)
+        for method, route in (("GET", "auth/register"), ("POST", "payments"),
+                              ("POST", "auth/register/extra"), ("POST", "auth/backoffice/identify")):
+            self.assertEqual(gateway.request_body_limit(method, route), 65536)
+
     def test_three_distinct_samples_and_cooldown(self):
         policy = Policy()
         sample = lambda t: {"service": "payment-api", "timestamp": t, "state": "anomaly", "anomaly": True, "features": {"requests_per_second": 2}}

@@ -13,7 +13,7 @@ vi.mock("./FaceVerification", () => ({
   ),
 }));
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); sessionStorage.clear(); vi.unstubAllGlobals(); });
 
 function openRegistration() {
   render(<App />);

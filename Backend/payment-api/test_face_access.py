@@ -10,6 +10,28 @@ import main
 
 
 class PaymentFaceAccessTests(unittest.TestCase):
+    def test_deleted_user_token_is_revoked(self):
+        from sqlalchemy import create_engine, text
+        from sqlalchemy.orm import Session
+        from sqlalchemy.pool import StaticPool
+        engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        with engine.begin() as connection:
+            connection.execute(text("CREATE TABLE users (id TEXT PRIMARY KEY, role TEXT)"))
+        def database():
+            with Session(engine) as db:
+                yield db
+        main.app.dependency_overrides[main.get_db] = database
+        token = jwt.encode({"sub": "deleted-user", "role": "admin", "iss": main.JWT_ISSUER,
+            "aud": main.JWT_AUDIENCE, "exp": int(time.time()) + 600, "face_verified_until": int(time.time()) + 300,
+            "face_method": "image_comparison", "auth_flow": "identifier_face_password"}, main.JWT_SECRET, algorithm="HS256")
+        try:
+            with patch.dict(os.environ, {"FACE_AUTH_MODE": "dev-images"}):
+                result = TestClient(main.app).get("/admin/payments", headers={"Authorization": "Bearer " + token})
+            self.assertEqual(result.status_code, 401)
+        finally:
+            main.app.dependency_overrides.clear()
+            engine.dispose()
+
     def test_admin_routes_require_unexpired_face_claim(self):
         client = TestClient(main.app)
         now = int(time.time())

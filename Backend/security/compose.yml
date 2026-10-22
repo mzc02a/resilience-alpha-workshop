@@ -23,7 +23,8 @@ services:
       MODSEC_AUDIT_LOG: /dev/stdout
       # Metadata/rule IDs only; do not log Authorization, password or request bodies.
       MODSEC_AUDIT_LOG_PARTS: "AHZ"
-      MODSEC_REQ_BODY_LIMIT: "65536"
+      # Uploaded image <=4 MiB plus 64 KiB multipart envelope; application rechecks image size.
+      MODSEC_REQ_BODY_LIMIT: "4259840"
       MODSEC_REQ_BODY_NOFILES_LIMIT: "65536"
     ports:
       - "127.0.0.1:8000:8080"

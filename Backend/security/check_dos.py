@@ -5,7 +5,8 @@ import time
 from collections import Counter
 
 import httpx
-from remediator import PROBE, TOKEN
+from remediator import TOKEN
+from lab_session import load_session, auth_headers
 
 
 async def main():
@@ -17,9 +18,7 @@ async def main():
         profile = (await client.get("http://payment-api:8000/lab-profile")).json()
         assert profile["enabled"], "Enable the explicit DoS lab profile"
         baseline = await legitimate_probe()
-        login = await client.post("http://waf:8080/auth/login", json=PROBE)
-        login.raise_for_status()
-        headers = {"Authorization": "Bearer " + login.json()["access_token"]}
+        headers = auth_headers(load_session(minimum=180))
         stop = asyncio.Event()
         statuses = Counter()
         async def load():

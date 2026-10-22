@@ -6,27 +6,27 @@ import time
 from pathlib import Path
 
 import httpx
-from remediator import PROBE
+from lab_session import load_session, auth_headers, preflight
 
 
 async def main():
     report_path = Path("/reports/dos-calibration.json")
-    report = {"state": "collecting", "started_at": time.time(), "requests": 0}
+    report = {"state": "preparing", "started_at": time.time(), "requests": 0}
     def save():
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    async with httpx.AsyncClient(timeout=10) as client:
-        profile = (await client.get("http://payment-api:8000/lab-profile")).json()
-        if not profile.get("enabled"):
-            raise RuntimeError("Lab profile must be enabled")
-        signup = await client.post("http://auth-api:8001/auth/register", json=PROBE)
-        if signup.status_code not in (201, 409):
-            signup.raise_for_status()
-        login = await client.post("http://waf:8080/auth/login", json=PROBE)
-        login.raise_for_status()
-        headers = {"Authorization": "Bearer " + login.json()["access_token"]}
-        save()
-        deadline = time.monotonic() + 17 * 60
+    save()  # Replace a stale ready report even when preparation fails.
+    async with httpx.AsyncClient(timeout=10, follow_redirects=False, trust_env=False) as client:
         try:
+            session = load_session(minimum=21 * 60)
+            profile_response = await client.get("http://payment-api:8000/lab-profile")
+            profile_response.raise_for_status()
+            if not profile_response.json().get("enabled"):
+                raise RuntimeError("Lab profile must be enabled")
+            await preflight(client, session)
+            headers = auth_headers(session)
+            report.update(state="collecting")
+            save()
+            deadline = time.monotonic() + 17 * 60
             while time.monotonic() < deadline:
                 result = await client.get("http://waf:8080/payments", headers=headers)
                 result.raise_for_status()

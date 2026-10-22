@@ -12,10 +12,10 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI, Response, Request, HTTPException
 from prometheus_client import Counter, Gauge, CONTENT_TYPE_LATEST, generate_latest
+from lab_session import load_session, auth_headers, transfer, readback_matches
 
 log = logging.getLogger("uvicorn.error")
 TOKEN = Path("/run/secrets/control_token").read_text().strip()
-PROBE = json.loads(Path("/run/secrets/probe_credentials").read_text())
 MIN_RPS = float(os.getenv("REMEDIATION_MIN_RPS", "1.0"))
 ENABLED = os.getenv("REMEDIATION_ENABLED", "1") == "1"
 actions = Counter("remediation_actions_total", "Bounded protection actions", ["result"])
@@ -58,14 +58,9 @@ def emit(event, **fields):
 
 
 async def verify_payment(client):
-    # One dedicated fictitious account, stable across restarts via a Compose secret.
-    registration = await client.post("http://auth-api:8001/auth/register", json=PROBE)
-    if registration.status_code not in (201, 409):
-        registration.raise_for_status()
-    login = await client.post("http://waf:8080/auth/login", json=PROBE)
-    login.raise_for_status()
-    headers = {"Authorization": "Bearer " + login.json()["access_token"]}
-    payment = await client.post("http://waf:8080/payments", headers=headers, json={"amount": "1.00", "currency": "EUR"})
+    session = load_session(minimum=30)
+    headers = auth_headers(session)
+    payment = await transfer(client, session)
     payment.raise_for_status()
     record = payment.json()
     if record.get("status") != "SUCCESS":
@@ -73,7 +68,7 @@ async def verify_payment(client):
     await asyncio.sleep(1.1)
     readback = await client.get("http://waf:8080/payments/" + record["id"], headers=headers)
     readback.raise_for_status()
-    if readback.json().get("id") != record["id"]:
+    if not readback_matches(record, readback.json()):
         raise ValueError("Payment readback mismatch")
     return record["id"]
 
@@ -86,6 +81,13 @@ async def run():
             try:
                 if not ENABLED:
                     state = {"state": "observer_only"}
+                    await asyncio.sleep(5)
+                    continue
+                # Do not arm a demonstration whose business verification session is absent.
+                try:
+                    load_session(minimum=180)
+                except ValueError:
+                    state = {"state": "waiting_for_probe_session"}
                     await asyncio.sleep(5)
                     continue
                 response = await client.get("http://ml-api:8002/status")

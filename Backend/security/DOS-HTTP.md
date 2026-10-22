@@ -1,5 +1,9 @@
 # DoS HTTP contrôlé — profil pédagogique à capacité réduite
 
+**Authentification mise a jour :** suivre d'abord [SESSION-PREPARATION.md](SESSION-PREPARATION.md).
+Les sondes utilisent des sessions obtenues par le parcours facial complet et un
+IBAN destinataire existant. Les anciennes inscriptions JSON ne sont plus utilisees.
+
 Le laboratoire limite volontairement payment-api à **deux opérations en parallèle**,
 avec **une seconde de travail simulé par opération**, attente maximale 50 ms.
 L'excès retourne un vrai HTTP 503 et empêche réellement certains paiements.
@@ -48,16 +52,17 @@ Backend\security\dos-stack.cmd up -d --no-deps --force-recreate calibration
 Backend\security\dos-stack.cmd run --rm --no-deps -v "${PWD}/Backend/security/runtime:/reports" remediator python business_probe.py --seconds 240
 ```
 
-4. Après 30 secondes de fonctionnement normal, ton collègue utilise les **deux
-   fichiers** lab_traffic.py et bounded_load.py dans le même dossier :
+4. Après 30 secondes de fonctionnement normal, ton collègue utilise les **trois
+   fichiers** lab_traffic.py, bounded_load.py et lab_session.py dans le même dossier :
 
 ```powershell
 python lab_traffic.py --url http://192.168.137.1:8080 --rps 4 --seconds 120
 ```
 
 Le script autorise au plus 5 départs/s, 4 requêtes simultanées et 180 secondes.
-Il n'ajoute pas de machines ni de destinations Internet. Le mot de passe du
-compte fictif est saisi masqué ; le rapport dos-traffic.json ne contient pas de token.
+Il n'ajoute pas de machines ni de destinations Internet. L'ancien mot de passe du
+compte fictif est remplace par un JWT de session obtenu apres connexion faciale,
+saisi masque ; le rapport dos-traffic.json ne contient pas de token.
 La concurrence est nécessaire pour dépasser la petite capacité simulée, sans
 augmenter le débit jusqu'à saturer le PC.
 

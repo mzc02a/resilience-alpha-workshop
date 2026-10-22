@@ -1,5 +1,9 @@
 # WAF et remédiation — laboratoire RESILIENCE-ALPHA
 
+**Connexion faciale et nouveaux virements :** lire [SESSION-PREPARATION.md](SESSION-PREPARATION.md)
+avant toute calibration ou recette. Une session valide et un IBAN destinataire
+remplacent les anciennes inscriptions/connexions automatiques par e-mail/mot de passe.
+
 ## Architecture
 
 Client → ModSecurity + OWASP CRS → passerelle → auth-api / payment-api.
@@ -50,7 +54,7 @@ Interface locale inchangée : frontend localhost:5173, API localhost:8000/8001.
 * Protection pendant 120 secondes : par source, 1 requête/s, rafale de 3.
   Les requêtes excédentaires reçoivent HTTP 429. Expiration automatique, sans reload.
 * Au moins 180 secondes entre deux activations ; aucune extension infinie.
-* Création/connexion d'un compte fictif de sonde dédié, paiement de 1 EUR à travers
+* Session faciale d'un compte fictif de sonde preparee avant l'essai, paiement de 1 EUR à travers
   le WAF et relecture du paiement. Un échec est enregistré explicitement.
 
 Le contrôleur ne déclare pas « reprise complète » parce qu'un paiement passe :
@@ -145,14 +149,14 @@ Contrôles WAF et remédiation ne remplacent pas le SIEM ni l'analyse de risques
 
 ## Script du PC attaquant autorisé
 
-Copier `lab_traffic.py` et `bounded_load.py` dans le même dossier sur le PC
+Copier `lab_traffic.py`, `bounded_load.py` et `lab_session.py` dans le même dossier sur le PC
 attaquant (Python requis), puis :
 
 ```powershell
 python lab_traffic.py --url http://192.168.137.1:8080 --rps 3 --seconds 120
 ```
 
-Entrer un compte de test existant. Le script ne crée pas de paiement : il lit
+Coller un JWT obtenu apres connexion faciale complete (saisie masquee). Le script ne crée pas de paiement : il lit
 l'historique, plafonne à 5 requêtes/s et 180 secondes, et comptabilise les 429.
 Il refuse les destinations hors localhost et du hotspot 192.168.137.0/24.
 N'utiliser que les machines autorisées du groupe.

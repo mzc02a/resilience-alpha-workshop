@@ -5,6 +5,11 @@ import urllib.error
 import urllib.request
 
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def run_load(base_url, token, seconds, rps):
     if not (15 <= seconds <= 180 and 1 <= rps <= 5):
         raise ValueError("Invalid bounded workload")
@@ -12,13 +17,14 @@ def run_load(base_url, token, seconds, rps):
         started = time.time()
         req = urllib.request.Request(base_url.rstrip("/") + "/payments", headers={"Authorization": "Bearer " + token})
         try:
-            with urllib.request.urlopen(req, timeout=3) as response:
+            direct = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+            with direct.open(req, timeout=3) as response:
                 response.read(1048576)
                 status = response.status
         except urllib.error.HTTPError as exc:
             status = exc.code
             exc.close()
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, OSError):
             status = "unavailable"
         return {"timestamp": started, "status": status, "duration_seconds": time.time() - started}
     results = []

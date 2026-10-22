@@ -5,6 +5,12 @@ $stack = Join-Path $racine 'Backend/security/dos-stack.cmd'
 $runtime = Join-Path $racine 'Backend/security/runtime'
 $null = Get-Command docker -ErrorAction Stop
 
+# Lire seulement la duree restante via le helper ; ne jamais afficher le JWT.
+$null = & $stack exec -T remediator python -c "from lab_session import load_session; load_session(minimum=360); print('Session de sonde prete')"
+if ($LASTEXITCODE -ne 0) {
+    throw 'Preparer une session faciale recente avec cyber/prepare-lab.ps1 avant le passage.'
+}
+
 $sante = Invoke-RestMethod 'http://localhost:8002/health' -TimeoutSec 5
 $ml = Invoke-RestMethod 'http://localhost:8002/status' -TimeoutSec 5
 $controleur = Invoke-RestMethod 'http://localhost:8003/status' -TimeoutSec 5

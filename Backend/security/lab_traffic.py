@@ -10,6 +10,12 @@ import urllib.request
 from collections import Counter
 from pathlib import Path
 from bounded_load import run_load
+from lab_session import token_lifetime
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 def main():
@@ -25,22 +31,24 @@ def main():
         valid = address.is_loopback or address in ipaddress.ip_network("192.168.137.0/24")
     except ValueError:
         valid = target.hostname in ("localhost", "127.0.0.1")
-    if not valid or target.scheme != "http" or target.username or target.password or target.path not in ("", "/"):
+    if (not valid or target.scheme != "http" or target.username or target.password
+            or target.path not in ("", "/") or target.query or target.fragment or target.port != 8080):
         parser.error("Only localhost or the authorized 192.168.137.0/24 hotspot is supported")
-    email = input("Compte fictif autorisé : ")
-    password = getpass.getpass("Mot de passe (masqué) : ")
-    login = urllib.request.Request(args.url.rstrip("/") + "/auth/login", headers={"Content-Type": "application/json"},
-        data=json.dumps({"email": email, "password": password}).encode())
+    token = getpass.getpass("JWT du compte fictif apres connexion faciale complete (saisie masquee) : ")
     try:
-        with urllib.request.urlopen(login, timeout=5) as response:
-            token = json.load(response)["access_token"]
-    except urllib.error.URLError:
-        raise SystemExit("Connexion refusée ou indisponible ; aucun trafic de test lancé.")
-    del password
+        token_lifetime(token, args.seconds + 60)
+        req = urllib.request.Request(args.url.rstrip("/") + "/auth/me", headers={"Authorization": "Bearer " + token})
+        direct = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+        with direct.open(req, timeout=5) as response:
+            json.load(response)
+    except (urllib.error.URLError, ValueError, OSError):
+        raise SystemExit("Session refusee, non active ou trop courte ; aucun trafic lance. Refaire la connexion complete.")
     records = run_load(args.url, token, args.seconds, args.rps)
     report = {"requested_rps": args.rps, "duration_seconds": args.seconds,
               "statuses": dict(Counter(str(row["status"]) for row in records)), "requests": records}
-    Path(args.output).write_text(json.dumps(report, indent=2), encoding="utf-8")
+    destination = Path(args.output)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps({"statuses": report["statuses"], "report": args.output}))
 
 

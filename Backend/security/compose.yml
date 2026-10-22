@@ -53,7 +53,8 @@ services:
     command: ["uvicorn", "remediator:app", "--host", "0.0.0.0", "--port", "8081", "--no-access-log"]
     secrets:
       - control_token
-      - probe_credentials
+    volumes:
+      - ./Backend/security/runtime:/lab:ro
     ports:
       - "127.0.0.1:8003:8081"
     read_only: true
@@ -67,5 +68,3 @@ services:
 secrets:
   control_token:
     file: ./Backend/security/runtime/control-token.txt
-  probe_credentials:
-    file: ./Backend/security/runtime/probe.json

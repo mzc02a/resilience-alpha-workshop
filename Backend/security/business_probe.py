@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 import httpx
-from remediator import PROBE
+from lab_session import load_session, auth_headers, preflight, transfer, readback_matches
 
 
 async def main():
@@ -15,20 +15,17 @@ async def main():
     parser.add_argument("--output", default="/reports/business-probe.json")
     args = parser.parse_args()
     records = []
-    async with httpx.AsyncClient(timeout=5) as client:
-        registration = await client.post("http://auth-api:8001/auth/register", json=PROBE)
-        if registration.status_code not in (201, 409):
-            registration.raise_for_status()
-        login = await client.post("http://waf:8080/auth/login", json=PROBE)
-        login.raise_for_status()
-        headers = {"Authorization": "Bearer " + login.json()["access_token"]}
+    async with httpx.AsyncClient(timeout=5, follow_redirects=False, trust_env=False) as client:
+        session = load_session(minimum=args.seconds + 60)
+        await preflight(client, session)
+        headers = auth_headers(session)
         deadline = time.monotonic() + args.seconds
         try:
             while time.monotonic() < deadline:
                 started = time.monotonic()
                 row = {"timestamp": time.time(), "success": False}
                 try:
-                    payment = await client.post("http://waf:8080/payments", headers=headers, json={"amount": "1.00", "currency": "EUR"})
+                    payment = await transfer(client, session)
                     row["post_status"] = payment.status_code
                     if payment.status_code == 201:
                         data = payment.json()
@@ -37,8 +34,7 @@ async def main():
                         await asyncio.sleep(1.1)
                         readback = await client.get("http://waf:8080/payments/" + data["id"], headers=headers)
                         row["read_status"] = readback.status_code
-                        row["success"] = (data.get("status") == "SUCCESS" and readback.status_code == 200
-                                          and readback.json().get("id") == data["id"])
+                        row["success"] = (readback.status_code == 200 and readback_matches(data, readback.json()))
                 except httpx.HTTPError as exc:
                     row["error_type"] = type(exc).__name__
                 row["duration_seconds"] = time.monotonic() - started

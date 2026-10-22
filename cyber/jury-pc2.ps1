@@ -15,7 +15,8 @@ $null = Read-Host 'Au signal du collegue, appuyer sur Entree'
 $null = New-Item -ItemType Directory -Path $dossier -Force
 $rapport = Join-Path $dossier ("dos-traffic-{0}.json" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 
-Write-Host 'Compte fictif user. Charge : 4 departs/s, 4 requetes simultanees max, 120s. Arret : Ctrl+C.'
+Write-Host 'Preparer un JWT obtenu apres connexion faciale complete. Ne pas saisir le mot de passe ici.'
+Write-Host 'Charge : 4 departs/s, 4 requetes simultanees max, 120s. Arret : Ctrl+C.'
 & python $scriptTrafic --url 'http://192.168.137.1:8080' --rps 4 --seconds 120 --output $rapport
 if ($LASTEXITCODE -ne 0) {
     throw 'Le generateur a echoue. Ne pas annoncer un essai reussi.'

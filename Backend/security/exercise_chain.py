@@ -5,16 +5,14 @@ import time
 from collections import Counter
 
 import httpx
-from remediator import PROBE
+from lab_session import load_session, auth_headers
 
 
 async def main():
     async with httpx.AsyncClient(timeout=5) as client:
         ml = await client.get("http://ml-api:8002/health")
         assert ml.json().get("model_ready"), "Train ML on normal traffic first"
-        login = await client.post("http://waf:8080/auth/login", json=PROBE)
-        login.raise_for_status()
-        headers = {"Authorization": "Bearer " + login.json()["access_token"]}
+        headers = auth_headers(load_session(minimum=180))
         started = time.time()
         statuses = Counter()
         deadline = time.monotonic() + 100

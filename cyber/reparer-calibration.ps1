@@ -41,8 +41,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Ancienne image ML : relancer le script sans -S
 Write-Host 'Pendant les 120s suivantes : aucune attaque et aucun autre generateur de trafic.' -ForegroundColor Yellow
 & $stack run --rm --no-deps -T `
     -v "${runtime}:/reports" `
-    -v "${outil}:/repair_calibration.py:ro" `
-    remediator python -u /repair_calibration.py
+    -v "${outil}:/app/repair_calibration.py:ro" `
+    remediator python -u /app/repair_calibration.py
 if ($LASTEXITCODE -ne 0) { throw 'Verification non concluante : consulter le rapport et les logs, ne pas forcer ready.' }
 Write-Host 'Calibration verifiee et reference ML conservee sur volume Docker.' -ForegroundColor Green
 Write-Host 'Vous pouvez lancer cyber/jury-hote.ps1 puis cyber/jury-pc2.ps1 au signal.'

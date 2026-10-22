@@ -7,3 +7,7 @@ __pycache__/
 node_modules/
 dist/
 payments_backup.sql
+private/
+face_models/
+face_references/
+tmp/ui-review/

@@ -1,0 +1,11 @@
+# Explicit opt-in for uploaded-image development. Not the final USB camera workflow.
+services:
+  auth-api:
+    environment:
+      FACE_AUTH_MODE: dev-images
+      FACE_REFERENCE_DIR: /app/face_references
+    volumes:
+      - ./private/face-references:/app/face_references:ro
+  payment-api:
+    environment:
+      FACE_AUTH_MODE: dev-images

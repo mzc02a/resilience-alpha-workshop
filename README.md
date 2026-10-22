@@ -1,4 +1,14 @@
-salut les amis
+## Comptes et virements
+
+IBAN de demonstration, 500 EUR initiaux et virements internes : [fonctionnement et tests](docs/transfers.md).
+
+## Verification faciale du back-office
+
+Mode developpement avec camera navigateur : [installation et essais](docs/face-auth.md).
+Inscription avec capture camera obligatoire.
+Connexion user et admin : identifiant, camera, puis mot de passe.
+Les routes admin exigent la validation des deux facteurs ; activer explicitement le
+fichier docker-compose.face-dev.yml pour les essais de comparaison faciale.
 
 ## Centralisation des logs avec Loki
 

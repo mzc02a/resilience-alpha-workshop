@@ -5,7 +5,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py .
+COPY main.py bank_accounts.py face_auth.py enroll_face.py download_face_models.py ./
+RUN python download_face_models.py
 
 EXPOSE 8001
 

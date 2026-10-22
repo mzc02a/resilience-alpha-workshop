@@ -16,7 +16,7 @@ services:
       retries: 10
 
   auth-api:
-    build: ./backend/auth-api
+    build: ./Backend/auth-api
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
@@ -30,7 +30,7 @@ services:
         condition: service_healthy
 
   payment-api:
-    build: ./backend/payment-api
+    build: ./Backend/payment-api
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
@@ -42,7 +42,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build: ./Frontend
     ports:
       - "127.0.0.1:5173:5173"
     depends_on:

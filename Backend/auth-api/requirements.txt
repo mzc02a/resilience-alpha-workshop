@@ -6,3 +6,7 @@ psycopg[binary]>=3.2,<4
 PyJWT>=2.9,<3
 pwdlib[argon2]>=0.2,<1
 email-validator>=2.2,<3
+python-multipart>=0.0.20,<1
+opencv-python-headless>=4.10,<5
+numpy>=2,<3
+Pillow>=11,<13

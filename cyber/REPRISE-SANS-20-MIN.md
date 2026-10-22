@@ -21,10 +21,14 @@ Le lanceur :
 2. Reconstruit/recree uniquement ml-api avec le detecteur corrige et son volume.
 3. Recharge les vraies observations historiques depuis Prometheus.
 4. Compare le modele avec l'ancienne validation, sans l'utiliser dans fit().
-5. Realise 120 secondes de trafic normal et une NOUVELLE validation independante.
+5. Stabilise le trafic pendant 90 secondes (fenetre rate de 1 minute + delais de collecte),
+   puis realise 120 secondes de NOUVELLE validation normale independante.
 6. Ecrit ready seulement si cette validation est complete et a au plus 20% d'alertes.
 
-Le temps de reconstruction Docker s'ajoute aux deux minutes de verification.
+Le lanceur exclut d'abord /lab-profile des metriques metier, en reconstruisant
+uniquement payment-api si necessaire. Les verifications de profil ne doivent
+pas modifier elles-memes la latence que le ML observe.
+Le temps de reconstruction Docker s'ajoute aux 3 min 30 de stabilisation/verification.
 Aucune attaque pendant cette procedure. Elle ne cree aucun paiement (lectures).
 Le rapport precedent est archive dans runtime/dos-calibration-before-replay-*.json.
 Si des mesures historiques manquent ou si la validation echoue, le lanceur refuse

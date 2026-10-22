@@ -34,7 +34,7 @@ async def main():
     backup.write_text(json.dumps(original, indent=2), encoding='utf-8')
     report = {'state': 'replaying', 'started_at': time.time(), 'requests': 0,
               'source_reference': source, 'backup': backup.name,
-              'fresh_validation_seconds': 120}
+              'warmup_seconds': 90, 'fresh_validation_seconds': 120}
     def save():
         temporary = path.with_suffix('.tmp')
         temporary.write_text(json.dumps(report, indent=2, allow_nan=False), encoding='utf-8')
@@ -50,19 +50,25 @@ async def main():
                 report['replay_refusal'] = result.json()
                 raise RuntimeError('Historical replay refused (HTTP ' + str(result.status_code) + '); inspect ML logs')
             replay = result.json()
-            report.update(state='validating', training=replay['training'],
+            report.update(state='warming_up', training=replay['training'],
                           historical_validation=replay['historical_validation'], validation=[])
-            validation_start = time.time()
+            # PromQL uses rate(...[1m]), and analysis looks 15s into the past.
+            # Let a full new window fill before evaluating the model.
+            validation_start = time.time() + 90
             report['fresh_validation_started_at'] = validation_start
             save()
-            print('Reference historique chargee. Validation normale NOUVELLE : 120 secondes, sans attaque.', flush=True)
-            deadline = time.monotonic() + 120
+            print('Reference chargee. Stabilisation 90s, puis validation 120s. Aucune nouvelle collecte de 20 minutes.', flush=True)
+            warmup_end = time.monotonic() + 90
+            deadline = warmup_end + 120
             last = 0
             next_progress = time.monotonic()
             while time.monotonic() < deadline:
                 response = await client.get('http://waf:8080/payments', headers=headers)
                 response.raise_for_status()
                 report['requests'] += 1
+                if report['state'] == 'warming_up' and time.monotonic() >= warmup_end:
+                    report['state'] = 'validating'
+                    print('Stabilisation terminee. Debut de la validation normale de 120s.', flush=True)
                 sample = (await client.get('http://ml-api:8002/status')).json()
                 timestamp = sample.get('timestamp', 0)
                 now = time.time()
@@ -72,7 +78,9 @@ async def main():
                     # Keep invalid states too: incomplete telemetry must not be counted normal.
                     report['validation'].append(sample)
                 if time.monotonic() >= next_progress:
-                    print('Validation : ' + str(max(0, round(deadline - time.monotonic()))) + 's restantes', flush=True)
+                    phase_end = warmup_end if report['state'] == 'warming_up' else deadline
+                    phase = 'Stabilisation' if report['state'] == 'warming_up' else 'Validation'
+                    print(phase + ' : ' + str(max(0, round(phase_end - time.monotonic()))) + 's restantes', flush=True)
                     next_progress = time.monotonic() + 15
                 save()
                 await asyncio.sleep(random.uniform(0.7, 1.3))

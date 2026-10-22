@@ -33,3 +33,13 @@ class MetricsTests(unittest.TestCase):
         body = response.body.decode()
         self.assertIn('http_requests_total{status="500"}', body)
         self.assertIn("http_request_duration_seconds_count", body)
+
+    def test_profile_checks_do_not_change_business_counters_or_latency(self):
+        request = type("Request", (), {"url": type("URL", (), {"path": "/lab-profile"})()})()
+        before_requests = main.http_requests.labels("200")._value.get()
+        before_duration = main.http_duration._sum.get()
+        async def profile(_):
+            return type("Response", (), {"status_code": 200})()
+        asyncio.run(main.observe_requests(request, profile))
+        self.assertEqual(main.http_requests.labels("200")._value.get(), before_requests)
+        self.assertEqual(main.http_duration._sum.get(), before_duration)

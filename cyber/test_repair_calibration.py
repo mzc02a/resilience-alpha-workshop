@@ -15,14 +15,15 @@ repair = importlib.import_module('repair_calibration')
 
 
 class RepairTests(unittest.TestCase):
-    def scenario(self, state='normal', model_id='new-model'):
+    def scenario(self, state='normal', model_id='new-model', warmup_state=None):
         import httpx
         clock = [0.0]
         posts = []
         async def get(url, **kwargs):
             if url.endswith('/status'):
-                sample = {'state': state}
-                if state in ('normal', 'anomaly'):
+                current_state = warmup_state if warmup_state and clock[0] < 90 else state
+                sample = {'state': current_state}
+                if current_state in ('normal', 'anomaly'):
                     sample.update(timestamp=20000 + (int(clock[0]) // 15) * 15 - 15,
                                   model_id=model_id)
                 return httpx.Response(200, json=sample)
@@ -61,8 +62,8 @@ class RepairTests(unittest.TestCase):
         self.assertEqual(len(posts), 1)
         self.assertTrue(posts[0][0].endswith('/replay-baseline'))
         self.assertEqual(posts[0][1]['json']['start'], 100)
-        self.assertGreaterEqual(clock[0], 120)
-        self.assertLess(clock[0], 130)
+        self.assertGreaterEqual(clock[0], 210)
+        self.assertLess(clock[0], 220)
         return result
 
     def test_fresh_normal_validation_accepts_without_new_collection(self):
@@ -80,6 +81,12 @@ class RepairTests(unittest.TestCase):
 
     def test_model_change_during_validation_rejected(self):
         self.assertEqual(self.scenario(model_id='different-model')['state'], 'review_required')
+
+    def test_startup_transient_is_not_part_of_validation(self):
+        result = self.scenario(warmup_state='anomaly')
+        self.assertEqual(result['state'], 'ready')
+        self.assertTrue(all(row['state'] == 'normal' for row in result['validation']))
+        self.assertTrue(all(row['timestamp'] >= result['fresh_validation_started_at'] for row in result['validation']))
 
 
 if __name__ == '__main__':

@@ -163,7 +163,9 @@ for status_code in (200, 201, 400, 401, 403, 404, 409, 422, 500, 503):
 
 @app.middleware("http")
 async def observe_requests(request: Request, call_next):
-    if request.url.path in ("/metrics", "/health"):
+    # Profile checks are monitoring traffic, not payment work. Counting them
+    # would change the ML's mean latency when it checks this route every 15s.
+    if request.url.path in ("/metrics", "/health", "/lab-profile"):
         return await call_next(request)
     started = perf_counter()
     status = 500

@@ -4,7 +4,7 @@ import unittest
 
 # SQLite creates no file and no external database connection. Startup is not run.
 os.environ["DATABASE_URL"] = "sqlite://"
-os.environ["JWT_SECRET"] = "test-only-secret-not-for-use"
+os.environ["JWT_SECRET"] = "test-only-metrics-secret-at-least-32-bytes-long"
 import main
 
 
